@@ -224,9 +224,9 @@ def _gen_info_gain_for_two(keyword_dir_base, keyword_dir_comp):
     return ig_dic, idx_dic
 
 
-def _compare_date_str(date_str1, date_str2, form):
-    dt1 = datetime.strptime(date_str1, form)
-    dt2 = datetime.strptime(date_str2, form)
+def _compare_date_str(date_str1, date_str2):
+    dt1 = datetime.strptime(date_str1, '%Y-%m-%d')
+    dt2 = datetime.strptime(date_str2, '%Y-%m-%d')
     return cmp(dt1.toordinal(), dt2.toordinal())
 
 
