@@ -75,7 +75,12 @@ def processing_tweets(data_dir, tweets_file):
                                            chunk_file_by_date_dir,
                                            chunk_file)
             if os.path.isfile(dated_file_name):
-                os.makedirs(os.path.join(data_dir, clusters_dir, chunk_file))
+                if not os.path.exists(os.path.join(data_dir,
+                                                   clusters_dir,
+                                                   chunk_file)):
+                    os.makedirs(os.path.join(data_dir,
+                                             clusters_dir,
+                                             chunk_file))
                 do_clustering(
                     dated_file_name,
                     os.path.join(data_dir, clusters_dir, chunk_file, plain_fn),
@@ -108,8 +113,8 @@ def processing_tweets(data_dir, tweets_file):
                                              head_fn)
             appearence, tweet_cnt = extract_keywords(cluster_head_file)
             if not os.path.exists(os.path.join(data_dir,
-                                              extracting_keywords_dir,
-                                              date_dir)):
+                                               extracting_keywords_dir,
+                                               date_dir)):
                 os.makedirs(os.path.join(data_dir,
                                          extracting_keywords_dir,
                                          date_dir))
