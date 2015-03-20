@@ -5,6 +5,7 @@ import sys
 import json
 import os
 from clustering import do_clustering
+from eventdetection import extract_keywords
 
 
 # This is the checkpoint name for chunking the raw file into 5000 lines.
@@ -31,6 +32,14 @@ author_cluster_fn = 'author_cluster'
 output_tweets_fn = 'output_tweets'
 tokens_fn = 'tokens'
 length_fn = 'length'
+
+# This is the checkpoint name for extracting the keywords from cluster heads.
+checkpoint_extracting_keywords = 'extracting_keywords.checkpoint'
+# This is the directory contains all the keywords for the cluster heads.
+extracting_keywords_dir = 'keyword_file'
+# Below is the standard file names defined for the extracted keywords.
+appearence_fn = 'appearence'
+tweet_cnt_fn = 'tweet_cnt'
 
 
 def processing_tweets(data_dir, tweets_file):
@@ -86,6 +95,34 @@ def processing_tweets(data_dir, tweets_file):
                                  length_fn))
         # Create the checkpoint marker file
         open(os.path.join(data_dir, checkpoint_cluster), 'w').close()
+
+    if not os.path.exists(os.path.join(data_dir,
+                                       checkpoint_extracting_keywords)):
+        if not os.path.exists(os.path.join(data_dir, extracting_keywords_dir)):
+            os.makedirs(os.path.join(data_dir, extracting_keywords_dir))
+        dated_cluster_dirs = os.listdir(os.path.join(data_dir, clusters_dir))
+        for date_dir in dated_cluster_dirs:
+            cluster_head_file = os.path.join(data_dir,
+                                             clusters_dir,
+                                             date_dir,
+                                             head_fn)
+            appearence, tweet_cnt = extract_keywords(cluster_head_file)
+            os.makedirs(os.path.join(data_dir,
+                                     extracting_keywords_dir,
+                                     date_dir))
+            fp = open(os.path.join(data_dir, extracting_keywords_dir, date_dir,
+                                   appearence_fn), 'w')
+            temp_str = json.JSONEncoder().encode(appearence)
+            fp.write(temp_str)
+            fp.close()
+
+            fp = open(os.path.join(data_dir, extracting_keywords_dir, date_dir,
+                                   tweet_cnt_fn), 'w')
+            fp.write(str(tweet_cnt))
+            fp.close()
+        # Create the checkpoint marker file
+        open(os.path.join(data_dir, checkpoint_extracting_keywords),
+             'w').close()
 
 
 def _chunking_raw_file(data_dir, tweets_file):
