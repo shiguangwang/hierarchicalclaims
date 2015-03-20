@@ -197,8 +197,9 @@ def _gen_info_gain_for_two(keyword_dir_base, keyword_dir_comp):
         int(open(os.path.join(keyword_dir_comp,
                               tweet_cnt_fn)).readline().strip())
 
-    key_list = \
-        [k for k in keyword_set_base.keys().union(keyword_set_comp.keys())]
+    key_list = [k for k in set(keyword_set_base.keys())
+                .union(set(keyword_set_comp.keys()))]
+    print len(key_list)
     ig_dic = {}
     idx_dic = {}
     for i in range(len(key_list)):
