@@ -194,7 +194,7 @@ def _gen_info_gain_for_two(keyword_dir_base, keyword_dir_comp):
         int(open(os.path.join(keyword_dir_base,
                               tweet_cnt_fn)).readline().strip())
     comp_total_intervals_len = \
-        int(open(os.path.jion(keyword_dir_comp,
+        int(open(os.path.join(keyword_dir_comp,
                               tweet_cnt_fn)).readline().strip())
 
     key_list = \
