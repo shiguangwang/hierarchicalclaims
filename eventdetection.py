@@ -107,8 +107,8 @@ def extract_keywords(tweets_file):
 
             for tag in postags:
                 if tag[0] not in appearence.keys():
-                    appearence[tag[0]] = set([])
-                appearence[tag[0]].add(tweet_id)
+                    appearence[tag[0]] = []
+                appearence[tag[0]].append(tweet_id)
 
             line_cnt = line_cnt + 1
         except:
