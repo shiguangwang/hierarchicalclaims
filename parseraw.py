@@ -107,9 +107,12 @@ def processing_tweets(data_dir, tweets_file):
                                              date_dir,
                                              head_fn)
             appearence, tweet_cnt = extract_keywords(cluster_head_file)
-            os.makedirs(os.path.join(data_dir,
-                                     extracting_keywords_dir,
-                                     date_dir))
+            if not os.path.exists(os.path.join(data_dir,
+                                              extracting_keywords_dir,
+                                              date_dir)):
+                os.makedirs(os.path.join(data_dir,
+                                         extracting_keywords_dir,
+                                         date_dir))
             fp = open(os.path.join(data_dir, extracting_keywords_dir, date_dir,
                                    appearence_fn), 'w')
             temp_str = json.JSONEncoder().encode(appearence)
