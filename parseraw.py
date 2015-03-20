@@ -5,7 +5,7 @@ import sys
 import json
 import os
 from clustering import do_clustering
-from eventdetection import extract_keywords
+from eventdetection import extract_keywords, compare_items, cal_info_gain
 
 
 # This is the checkpoint name for chunking the raw file into 5000 lines.
@@ -40,6 +40,19 @@ extracting_keywords_dir = 'keyword_file'
 # Below is the standard file names defined for the extracted keywords.
 appearence_fn = 'appearence'
 tweet_cnt_fn = 'tweet_cnt'
+
+# This is the checkpoint name for calculating IG for keyword pairs.
+checkpoint_information_gain = 'information_gain.checkpoint'
+# This is the directory contains all the keyword pair IG in consequtive slots.
+information_gain_dir = 'information_gain_files'
+# Standard file names
+keyword_pair_fn = 'pairs'
+# Threshold for top K most significant keyword pairs
+information_gain_top_k = 40
+# Customized dict keys
+keyword_pair_key = 'kw_pair'
+information_gain_key = 'info_gain'
+tweet_ids_key = 'tweet_ids'
 
 
 def processing_tweets(data_dir, tweets_file):
@@ -131,6 +144,90 @@ def processing_tweets(data_dir, tweets_file):
         # Create the checkpoint marker file
         open(os.path.join(data_dir, checkpoint_extracting_keywords),
              'w').close()
+
+    if not os.path.exists(os.path.join(data_dir,
+                                       checkpoint_information_gain)):
+        if not os.path.exists(os.path.join(data_dir, information_gain_dir)):
+            os.makedirs(os.path.join(data_dir, information_gain_dir))
+        dated_keywords_dir = os.listdir(os.path.join(data_dir,
+                                        extracting_keywords_dir))
+        dated_keywords_dir.sort(_compare_date_str)
+        # TODO: only consecutive slots are considered here.
+        for i in range(len(dated_keywords_dir) - 1):
+            keyword_dir_base = os.path.join(data_dir, extracting_keywords_dir,
+                                            dated_keywords_dir[i])
+            keyword_dir_comp = os.path.join(data_dir, extracting_keywords_dir,
+                                            dated_keywords_dir[i + 1])
+            ig_dic, idx_dic = _gen_info_gain_for_two(keyword_dir_base,
+                                                     keyword_dir_comp)
+            ig_items = ig_dic.items()
+            ig_items.sort(compare_items)
+            ig_pair_dir =\
+                dated_keywords_dir[i] + '-' + dated_keywords_dir[i + 1]
+            if not os.path.exists(os.path.join(data_dir, information_gain_dir,
+                                               ig_pair_dir)):
+                os.makedirs(os.path.join(data_dir, information_gain_dir,
+                                         ig_pair_dir))
+            cnt = 0
+            fp = open(os.path.join(data_dir, information_gain_dir,
+                                   ig_pair_dir, keyword_pair_fn), 'w')
+            for item in ig_items:
+                if cnt > information_gain_top_k:
+                    break
+                dic_to_write = {}
+                dic_to_write[keyword_pair_key] = item[0]
+                dic_to_write[information_gain_key] = item[1]
+                dic_to_write[tweet_ids_key] = idx_dic[item[0]]
+                fp.write(json.JSONEncoder().encode(dic_to_write) + '\n')
+            fp.close()
+        # Create the checkpoint marker file
+        open(os.path.join(data_dir, checkpoint_information_gain), 'w').close()
+
+
+def _gen_info_gain_for_two(keyword_dir_base, keyword_dir_comp):
+    keyword_set_base = json.load(open(os.path.join(keyword_dir_base,
+                                                   appearence_fn)))
+    keyword_set_comp = json.load(open(os.path.join(keyword_dir_comp,
+                                                   appearence_fn)))
+
+    base_total_intervals_len =\
+        int(open(os.path.join(keyword_dir_base,
+                              tweet_cnt_fn)).readline().strip())
+    comp_total_intervals_len = \
+        int(open(os.path.jion(keyword_dir_comp,
+                              tweet_cnt_fn)).readline().strip())
+
+    key_list = \
+        [k for k in keyword_set_base.keys().union(keyword_set_comp.keys())]
+    ig_dic = {}
+    idx_dic = {}
+    for i in range(len(key_list)):
+        for j in range(i + 1, len(key_list)):
+            pair = (key_list[i], key_list[j])
+            if not (pair[0] in keyword_set_base.keys()
+                    and pair[1] in keyword_set_base.keys()):
+                base_inclusive_intervals = set([])
+            else:
+                base_inclusive_intervals = set(keyword_set_base[pair[0]])\
+                    .intersection(set(keyword_set_comp[pair[1]]))
+            if not (pair[0] in keyword_set_comp.keys()
+                    and pair[1] in keyword_set_comp.keys()):
+                comp_inclusive_intervals = set([])
+            else:
+                comp_inclusive_intervals = set(keyword_set_comp[pair[0]])\
+                    .intersection(set(keyword_set_comp[pair[1]]))
+            idx_dic[pair] = [i for i in comp_inclusive_intervals]
+            ig_dic[pair] = cal_info_gain(len(base_inclusive_intervals),
+                                         len(comp_inclusive_intervals),
+                                         base_total_intervals_len,
+                                         comp_total_intervals_len)
+    return ig_dic, idx_dic
+
+
+def _compare_date_str(date_str1, date_str2, form):
+    dt1 = datetime.strptime(date_str1, form)
+    dt2 = datetime.strptime(date_str2, form)
+    return cmp(dt1.toordinal(), dt2.toordinal())
 
 
 def _chunking_raw_file(data_dir, tweets_file):

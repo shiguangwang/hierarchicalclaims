@@ -9,9 +9,9 @@ import re
 import sys
 from apollo_lib import util
 
-stop = stopwords.words()
+# stop = stopwords.words()
 precesion = 0.0001
-len_thresh = 4
+# len_thresh = 4
 
 
 def compare_items((w1, c1), (w2, c2)):
@@ -31,16 +31,16 @@ def p_logp(p1, p2):
     return p1 * log(p2, 2)
 
 
-def cal_info_gain(norm_set, anorm_set, xi, norm_total_intervals,
-                  anorm_total_intervals):
+def cal_info_gain(norm_inclusive_intervals, anorm_inclusive_intervals,
+                  norm_total_intervals, anorm_total_intervals):
     '''
               Y
            1      0
      X 0   c      d
        1   a      b
     '''
-    a = len(norm_set[xi]) if xi in norm_set.keys() else 0
-    b = len(anorm_set[xi]) if xi in anorm_set.keys() else 0
+    a = norm_inclusive_intervals
+    b = anorm_inclusive_intervals
     c = norm_total_intervals - a
     d = anorm_total_intervals - b
 
@@ -80,6 +80,9 @@ def extract_keywords(tweets_file):
     '''
     Get all keywords based on predefined rules from the raw tweet text file.
     '''
+    stop = stopwords.words()
+    len_thresh = 4
+
     print >> sys.stderr, 'Start getting the keywords from {}...'\
         .format(tweets_file)
     fp = open(tweets_file)
