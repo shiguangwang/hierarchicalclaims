@@ -205,8 +205,8 @@ def _gen_info_gain_for_two(keyword_dir_base, keyword_dir_comp):
     for i in range(len(key_list)):
         print 'i is ', i
         for j in range(i + 1, len(key_list)):
-            print 'j is ', j
-            pair = (key_list[i], key_list[j])
+            print 'j is ', j, 'key_list[j] = ', key_list[j]
+            pair = [key_list[i], key_list[j]]
             if not (pair[0] in keyword_set_base.keys()
                     and pair[1] in keyword_set_base.keys()):
                 base_inclusive_intervals = set([])
