@@ -158,12 +158,13 @@ def processing_tweets(data_dir, tweets_file):
                                             dated_keywords_dir[i])
             keyword_dir_comp = os.path.join(data_dir, extracting_keywords_dir,
                                             dated_keywords_dir[i + 1])
+            ig_pair_dir =\
+                dated_keywords_dir[i] + '_' + dated_keywords_dir[i + 1]
+            print >> sys.stderr, ig_pair_dir
             ig_dic, idx_dic = _gen_info_gain_for_two(keyword_dir_base,
                                                      keyword_dir_comp)
             ig_items = ig_dic.items()
             ig_items.sort(compare_items)
-            ig_pair_dir =\
-                dated_keywords_dir[i] + '-' + dated_keywords_dir[i + 1]
             if not os.path.exists(os.path.join(data_dir, information_gain_dir,
                                                ig_pair_dir)):
                 os.makedirs(os.path.join(data_dir, information_gain_dir,
@@ -172,6 +173,7 @@ def processing_tweets(data_dir, tweets_file):
             fp = open(os.path.join(data_dir, information_gain_dir,
                                    ig_pair_dir, keyword_pair_fn), 'w')
             for item in ig_items:
+                cnt = cnt + 1
                 if cnt > information_gain_top_k:
                     break
                 dic_to_write = {}
@@ -193,37 +195,49 @@ def _gen_info_gain_for_two(keyword_dir_base, keyword_dir_comp):
     base_total_intervals_len =\
         int(open(os.path.join(keyword_dir_base,
                               tweet_cnt_fn)).readline().strip())
+    print >> sys.stderr, 'base_total_intervals_len = ' + str(base_total_intervals_len)
+
     comp_total_intervals_len = \
         int(open(os.path.join(keyword_dir_comp,
                               tweet_cnt_fn)).readline().strip())
+    print >> sys.stderr, 'comp_total_intervals_len = ' + str(comp_total_intervals_len)
 
     key_list = [k for k in set(keyword_set_base.keys())
                 .union(set(keyword_set_comp.keys()))]
-    print len(key_list)
+    print >> sys.stderr, 'key_list length is {}'.format(len(key_list))
     ig_dic = {}
     idx_dic = {}
+    pair_list = []
     for i in range(len(key_list)):
-        print 'i is ', i
         for j in range(i + 1, len(key_list)):
-            print 'j is ', j, 'key_list[j] = ', key_list[j]
-            pair = [key_list[i], key_list[j]]
-            if not (pair[0] in keyword_set_base.keys()
-                    and pair[1] in keyword_set_base.keys()):
-                base_inclusive_intervals = set([])
-            else:
-                base_inclusive_intervals = set(keyword_set_base[pair[0]])\
-                    .intersection(set(keyword_set_comp[pair[1]]))
-            if not (pair[0] in keyword_set_comp.keys()
-                    and pair[1] in keyword_set_comp.keys()):
-                comp_inclusive_intervals = set([])
-            else:
-                comp_inclusive_intervals = set(keyword_set_comp[pair[0]])\
-                    .intersection(set(keyword_set_comp[pair[1]]))
-            idx_dic[pair] = [i for i in comp_inclusive_intervals]
-            ig_dic[pair] = cal_info_gain(len(base_inclusive_intervals),
-                                         len(comp_inclusive_intervals),
-                                         base_total_intervals_len,
-                                         comp_total_intervals_len)
+            pair = (key_list[i], key_list[j])
+            pair_list.append(pair)
+    print >> sys.stderr, 'extracted kw pairs done. {} pairs exracted.'.format(len(pair_list))
+
+    cnt = 0
+    for pair in pair_list:
+        cnt = cnt + 1
+        if (cnt % 10000) == 0:
+            print >> sys.stderr, 'processed {0} / {1}'.format(cnt, len(pair_list))
+        if not (pair[0] in keyword_set_base.keys()
+                and pair[1] in keyword_set_base.keys()):
+            base_inclusive_intervals = set([])
+        else:
+            base_inclusive_intervals = set(keyword_set_base[pair[0]])\
+                .intersection(set(keyword_set_base[pair[1]]))
+        if not (pair[0] in keyword_set_comp.keys()
+                and pair[1] in keyword_set_comp.keys()):
+            comp_inclusive_intervals = set([])
+        else:
+            comp_inclusive_intervals = set(keyword_set_comp[pair[0]])\
+                .intersection(set(keyword_set_comp[pair[1]]))
+        if len(base_inclusive_intervals) > len(comp_inclusive_intervals):
+            continue
+        idx_dic[pair] = [item for item in comp_inclusive_intervals]
+        ig_dic[pair] = cal_info_gain(len(base_inclusive_intervals),
+                                     len(comp_inclusive_intervals),
+                                     base_total_intervals_len,
+                                     comp_total_intervals_len)
     return ig_dic, idx_dic
 
 
