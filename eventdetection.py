@@ -81,7 +81,8 @@ def extract_keywords(tweets_file):
     Get all keywords based on predefined rules from the raw tweet text file.
     '''
     stop = stopwords.words()
-    len_thresh = 4
+    len_thresh = 5
+    popular_thresh = 5
 
     print >> sys.stderr, 'Start getting the keywords from {}...'\
         .format(tweets_file)
@@ -105,7 +106,7 @@ def extract_keywords(tweets_file):
 
             tokens = [i for i in tweet_text.split(' ') if i not in stop]
             postags = set([tag for tag in pos_tag(tokens)
-                           if len(tag[0]) > len_thresh
+                           if len(tag[0]) >= len_thresh
                            and tag[1].startswith('N')])
 
             for tag in postags:
@@ -116,7 +117,11 @@ def extract_keywords(tweets_file):
             line_cnt = line_cnt + 1
         except:
             print >> sys.stderr, 'FOUND A TWEET WITH INVALID FORMAT!'
-    return appearence, line_cnt
+    appearence_trimmed = {}
+    for k in appearence.keys():
+        if len(appearence[k]) >= popular_thresh:
+            appearence_trimmed[k] = appearence[k]
+    return appearence_trimmed, line_cnt
 
 
 def get_analysis_by_intervals(lines):
