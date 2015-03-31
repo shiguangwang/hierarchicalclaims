@@ -49,6 +49,7 @@ information_gain_dir = 'information_gain_files'
 keyword_pair_fn = 'pairs'
 # Threshold for top K most significant keyword pairs
 information_gain_top_k = 40
+information_gain_thresh = 0
 # Customized dict keys
 keyword_pair_key = 'kw_pair'
 information_gain_key = 'info_gain'
@@ -169,12 +170,14 @@ def processing_tweets(data_dir, tweets_file):
                                                ig_pair_dir)):
                 os.makedirs(os.path.join(data_dir, information_gain_dir,
                                          ig_pair_dir))
-            cnt = 0
+            #cnt = 0
             fp = open(os.path.join(data_dir, information_gain_dir,
                                    ig_pair_dir, keyword_pair_fn), 'w')
             for item in ig_items:
-                cnt = cnt + 1
-                if cnt > information_gain_top_k:
+            #    cnt = cnt + 1
+                #if cnt > information_gain_top_k:
+                #    break
+                if item[1] <= information_gain_thresh:
                     break
                 dic_to_write = {}
                 dic_to_write[keyword_pair_key] = item[0]
