@@ -2,6 +2,9 @@
 
 import sys
 import numpy as np
+import math
+
+top_k = 15
 
 
 def caldist_hist(dict1, dict2):
@@ -11,21 +14,25 @@ def caldist_hist(dict1, dict2):
     counter1.subtract(counter2)
     nume = sum(np.absolute(counter1.values()))
     denom = sum(dict1.values()) + sum(dict2.values())
-    print dict1
-    print dict2
-    print denom
+    #print dict1
+    #print dict2
+    #print denom
     if denom == 0:
         return sys.float_info.max
     return nume * 1.0 / denom
 
 
 def caldist_jacard(dict1, dict2):
+    print >> sys.stderr, 'jaccard' + str(dict1)
+    print >> sys.stderr, 'jaccard' + str(dict2)
     set1 = set(dict1.keys())
     set2 = set(dict2.keys())
     setu = set1.union(set2)
     seti = set1.intersection(set2)
     if len(setu) == 0:
         return sys.float_info.max
+    ret = len(seti) * 1.0 / len(setu);
+    print >> sys.stderr, 'jaccard' + str(ret)
     return 1 - len(seti) * 1.0 / len(setu)
     
 
@@ -93,11 +100,28 @@ def caldist_kl_norm(dic1, dic2):
     return caldist_kl_core(dict1, dict2)
 
 
+def caldist_cosine(dic1, dic2):
+    keyset = set(dic1.keys()).intersection(set(dic2.keys()))
+    nume = 0.0
+    for key in keyset:
+        nume = nume + dic1[key] * dic2[key]
+    denom = 0.0
+    for key in dic1.keys():
+        denom = denom + dic1[key] * dic1[key]
+    denom = math.sqrt(denom)
+    denom2 = 0.0
+    for key in dic2.keys():
+        denom2 = denom2 + dic2[key] * dic2[key]
+    denom2 = math.sqrt(denom2)
+    return 1 - nume / (denom * denom2)
+
+
 method = {
         'hist': caldist_hist,
         'jacard': caldist_jacard,
-        'kl': caldist_kl,
-        'kl_norm': caldist_kl_norm
+#        'kl': caldist_kl,
+        'klnorm': caldist_kl_norm,
+        'cosine': caldist_cosine
         }
 
 
@@ -110,13 +134,18 @@ def caldist(dict1, dict2, alg='hist'):
 
     The user can select any of the define method to compute the distance 
     value, the default method to compute the distance value is 'hist'.
-    The other possible methods are 'jacard', 'kl', and 'kl_norm'.
+    The other possible methods are 'jacard', 'kl', and 'klnorm', 'cosine'.
     '''
+    from collections import Counter
+    c1 = Counter(dict1)
+    dic1 = dict(c1.most_common(top_k))
+    c2 = Counter(dict2)
+    dic2 = dict(c2.most_common(top_k))
     if alg not in method: 
         print >> sys.stderr, '''the input method {0} is not defined, please 
-        select 'hist', 'jacard', 'kl', or 'kl_norm' as the distance
+        select 'hist', 'jacard', 'kl', or 'klnorm' as the distance
         computing method'''.format(alg)
-    return method[alg](dict1, dict2)
+    return method[alg](dic1, dic2)
 
 
 def parse_file(input_file_name):
@@ -191,34 +220,35 @@ def testing():
     dic1 = cp.deepcopy(dict1)
     dic2 = cp.deepcopy(dict2)
     dic3 = cp.deepcopy(dict3)
-    print caldist(dic1, dic2, alg='kl_norm')
-    print caldist(dic1, dic3, alg='kl_norm')
+    print caldist(dic1, dic2, alg='klnorm')
+    print caldist(dic1, dic3, alg='klnorm')
 
 
 if __name__ == '__main__':
     #testing()
-    file_name = '../data/protest/event_summary.txt'
-    file_prefix = '../data/protest/'
+    file_prefix = sys.argv[1]
+    file_name = file_prefix + sys.argv[2] 
     dlist_raw = parse_file(file_name)
-    dlist = []
-    dlist.append(dlist_raw[3])
-    dlist.append(dlist_raw[1])
-    dlist.append(dlist_raw[2])
-    dlist.append(dlist_raw[0])
+#    dlist = []
+#    dlist.append(dlist_raw[4])
+#    dlist.append(dlist_raw[1])
+#    dlist.append(dlist_raw[2])
+#    dlist.append(dlist_raw[0])
+    dlist = dlist_raw
     for i in range(len(dlist)):
         d = dlist[i]
         results = cal_dist_perday(d, 'hist')
         fo = open(file_prefix + 'd' + str(i + 1) + '_hist.txt', 'w')
-        print >> fo,  results[0:20]
+        print >> fo,  results
         results = cal_dist_perday(d, 'jacard')
         fo = open(file_prefix + 'd' + str(i + 1) + '_jacard.txt', 'w')
-        print >> fo, results[0:20]
+        print >> fo, results
         results = cal_dist_perday(d, 'kl')
         fo = open(file_prefix + 'd' + str(i + 1) + '_kl.txt', 'w')
-        print >> fo, results[0:20]
-        results = cal_dist_perday(d, 'kl_norm')
+        print >> fo, results
+        results = cal_dist_perday(d, 'klnorm')
         fo = open(file_prefix + 'd' + str(i + 1) + '_klnorm.txt', 'w')
-        print >>fo, results[0:20]
+        print >>fo, results
     for i in range(len(dlist) - 1):
         d1 = dlist[i]
         d2 = dlist[i + 1]
@@ -234,7 +264,7 @@ if __name__ == '__main__':
         fo = open(file_prefix + 'd' + str(i + 1) + 'd' + str(i + 2) + '_kl.txt', 
                 'w')
         print >> fo, results[0:20]
-        results = cal_dist_twoday(d1, d2, 'kl_norm')
+        results = cal_dist_twoday(d1, d2, 'klnorm')
         fo = open(file_prefix + 'd' + str(i + 1) + 'd' + str(i + 2) + 
         '_klnorm.txt', 'w')
         print >> fo, results[0:20]
