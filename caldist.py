@@ -183,9 +183,11 @@ def cal_dist_twoday(day1, day2, alg='hist'):
     results = []
     for item1 in day1:
         for item2 in day2:
-            result = [item1['event'], item2['event']]
-            result.append(caldist(item1['token_counter'], 
-                item2['token_counter'], alg))
+            result = []
+            result.append(item1['signature'])
+            result.append(item2['signature'])
+            result.append(caldist(item1['tokens'], 
+                item2['tokens'], alg))
             results.append(result)
 
     def local_cmp(item1, item2):

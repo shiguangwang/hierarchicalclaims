@@ -8,8 +8,9 @@ from clustering import do_clustering
 from eventdetection import extract_keywords, compare_items, cal_info_gain
 from data_analyzer import analyze_tweets, summarize_events
 from data_analyzer import analyze_consolidated_tweets
-from caldist import method, parse_file, cal_dist_perday
+from caldist import method, parse_file, cal_dist_perday, cal_dist_twoday
 from consolidation import consolidating
+import ast
 
 
 # This is the checkpoint name for chunking the raw file into 5000 lines.
@@ -97,9 +98,15 @@ consolidation_tweets_set_key = 'tweet_ids'
 consolidation_thresh = 0.85
 consolidation_alg = 'jacard'
 
-# Thi sis the extracking token frequency for consolidated events.
+# This is the extracking token frequency for consolidated events.
 checkpoint_consolidated_events_token_frequency =\
     'cosolidated_token_frequency.checkpoint'
+
+# This is the event tracking checkpoint
+checkpoint_event_tracking = 'event_tracking.checkpoint'
+event_tracking_dir = 'event_tracking'
+event_tracking_thresh = 0.85
+event_tracking_alg = 'jacard'
 
 
 def processing_tweets(data_dir, tweets_file):
@@ -291,6 +298,47 @@ def processing_tweets(data_dir, tweets_file):
         analyze_consolidated_tweets(data_dir)
         open(os.path.join(data_dir,
              checkpoint_consolidated_events_token_frequency), 'w').close()
+    if not os.path.exists(os.path.join(data_dir, checkpoint_event_tracking)):
+        _event_tracking(data_dir)
+        open(os.path.join(data_dir, checkpoint_event_tracking), 'w').close()
+
+
+def _event_tracking(data_dir):
+    if not os.path.exists(os.path.join(data_dir, event_tracking_dir)):
+        os.makedirs(os.path.join(data_dir, event_tracking_dir))
+    token_frequency_fnlist = os.listdir(
+        os.path.join(data_dir,
+                     'consolidated_events_token_frequency'))
+
+    def local_cmp(it1, it2):
+        date_format = "%Y-%m-%d-%H"
+        time1 = datetime.strptime(it1, date_format)
+        time2 = datetime.strptime(it2, date_format)
+        if time1 < time2:
+            return -1
+        if time1 > time2:
+            return 1
+        return 0
+    token_frequency_fnlist.sort(cmp=local_cmp)
+    for i in range(len(token_frequency_fnlist) - 1):
+        fn1 = token_frequency_fnlist[i]
+        fn2 = token_frequency_fnlist[i + 1]
+
+        fi1 = open(
+            os.path.join(data_dir, 'consolidated_events_token_frequency', fn1))
+        fi2 = open(
+            os.path.join(data_dir, 'consolidated_events_token_frequency', fn2))
+
+        day1 = ast.literal_eval(fi1.readline().strip())
+        day2 = ast.literal_eval(fi2.readline().strip())
+
+        for alg in method.keys():
+            tracking_res = cal_dist_twoday(day1, day2, alg)
+            fo = open(
+                os.path.join(
+                    data_dir, event_tracking_dir,
+                    fn1 + '_' + fn2 + '_' + alg), 'w')
+            print >> fo, tracking_res
 
 
 def _consolidating(data_dir):
