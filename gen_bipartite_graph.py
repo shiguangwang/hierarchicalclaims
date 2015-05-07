@@ -5,13 +5,13 @@ from pprint import pprint as pp
 import sys
 
 
-def gen_signature(sig_list):
+def gen_signature(sig_list, slot_idx):
     set_sig = set([])
     for it in sig_list:
         tokens = it.split('_')
         set_sig.add(tokens[0])
         set_sig.add(tokens[1])
-    signat = ''
+    signat = str(slot_idx) + '_'
     for elem in set_sig:
         signat += str(elem) + '_'
     return signat[:-1]
@@ -47,16 +47,19 @@ def gen_protests(data_dir):
         return 0
     node_fn_list.sort(cmp=local_cmp)
 
+    slot_idx = 0
     for fn in node_fn_list:
+        slot_idx += 1
         node_list.append([])
         fi = open(os.path.join(node_dir, fn))
         signature_list = ast.literal_eval(fi.readline().strip())
         for item in signature_list:
             temp_sig = item['signature']
-            signat = gen_signature(temp_sig)
+            signat = gen_signature(temp_sig, slot_idx)
             node_list[len(node_list) - 1].append(signat)
-    pp(node_list)
-    print(len(node_list))
+    # pp(node_list)
+    # print(len(node_list))
+    print(slot_idx)
 
     fo = open(os.path.join(data_dir, out_dir, node_out_fn), 'w')
     print >> fo, node_list
@@ -76,14 +79,17 @@ def gen_protests(data_dir):
             return 1
         return 0
     alg_fn_list.sort(cmp=local_cmp1)
+    slot_idx = 0
     for fn in alg_fn_list:
+        slot_idx += 1
         fi = open(os.path.join(edge_dir, fn))
         dist_list = ast.literal_eval(fi.readline().strip())
         for item in dist_list:
             if item[2] < thresh:
-                edge_list.append((gen_signature(item[0]), gen_signature(item[1])))
+                edge_list.append((gen_signature(item[0], slot_idx), gen_signature(item[1], slot_idx + 1)))
         fi.close()
-    pp(edge_list)
+    print(slot_idx)
+    # pp(edge_list)
     fo = open(os.path.join(data_dir, out_dir, edge_out_fn), 'w')
     print >> fo, edge_list
     fo.close()
