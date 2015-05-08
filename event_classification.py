@@ -14,14 +14,109 @@ import ast
 
 keyword_bags = {
     "war": [
-        'attack', 'bombing', 'strike', 'airstrike', 'militia', 'seize',
-        'coalition', 'military', 'tank', 'insurgent', 'insurgency', 'rebels',
-        'ceasefire'],
+        'saudi',
+        'yemen',
+        'bombing',
+        'attack',
+        'boston',
+        'trial',
+        'phase',
+        'campaign',
+        'rebels',
+        'penalty',
+        'arabia',
+        'marathon',
+        'malala',
+        'pakistan',
+        'airstrikes',
+        'police',
+        'coalition',
+        'court',
+        'border',
+        'church',
+        'ukraine',
+        'houthi',
+        'paris',
+        'french',
+        'syria',
+        'yemeni',
+        'yousafzai',
+        'jails',
+        'begin',
+        'kills',
+        'dozens',
+        'capital',
+        'france',
+        'south',
+        'terror',
+        'saudis',
+        'soldiers',
+        'clash',
+        'death',
+        'churches',
+        'tsarnaev',
+        'breaking',
+        'shiite',
+        'strikes',
+        'arrested',
+        'operation',
+        'foiled',
+        'extremist',
+        'begins'
+     ],
 
     'disaster': [
-        'refugees', 'evacuation', 'crisis', 'camp', 'humanitarian', 'aid',
-        'damage', 'disaster', 'earthquake', 'flood', 'tsunami', 'typhoon',
-        'cyclone', 'hurricane', 'relief', 'donate'],
+        'nepal',
+        'disaster',
+        'earthquake',
+        'cross',
+        'response',
+        'captain',
+        'relief',
+        'chernobyl',
+        'nepalearthquake',
+        'donate',
+        'ferry',
+        'quake',
+        'migrant',
+        'south',
+        'people',
+        'korea',
+        'humanitarian',
+        'nuclear',
+        'worst',
+        'assistance',
+        'ukraine',
+        'india',
+        'sending',
+        'prayers',
+        'nepalquake',
+        'appeal',
+        'victims',
+        'years',
+        'please',
+        'today',
+        'million',
+        'epicentre',
+        'natural',
+        'malta',
+        'experts',
+        'donations',
+        'devastation',
+        'affected',
+        'facebook',
+        'towns',
+        'google',
+        'missing',
+        'teams',
+        'rescue',
+        'thousands',
+        'urgent',
+        'since',
+        'horror',
+        'emerges',
+        'death'
+        ],
 
     # 'violence_kw': [
     #     'shooting', 'killing', 'explosion', 'bomb', 'death', 'suicide', 'kill',
@@ -34,15 +129,113 @@ keyword_bags = {
     #     'bigot', 'hatred', 'solidarity'],
 
     'protest': [
-        'protest', 'rally', 'damonstration', 'gather', 'gathering', 'confront',
-        'confrontation', 'violence', 'violent', 'march'],
+        'protest',
+        'baltimore',
+        'police',
+        'death',
+        'people',
+        'violence',
+        'violent',
+        'peaceful',
+        'freddie',
+        'freddiegray',
+        'ethiopian',
+        'black',
+        'racism',
+        'turns',
+        'thousands',
+        'arrested',
+        'blackpool',
+        'custody',
+        'brutality',
+        'farmer',
+        'march',
+        'drone',
+        'charlie',
+        'israel',
+        'hebdo',
+        'today',
+        'israeli',
+        'nuclear',
+        'suicide',
+        'office',
+        'union',
+        'writers',
+        'baltimoreriots',
+        'square',
+        'delhi',
+        'mayday',
+        'israelis',
+        'hundreds',
+        'landing',
+        'solidarity',
+        'congress',
+        'pitch',
+        'blacklivesmatter',
+        'protests',
+        'telaviv',
+        'right',
+        'protesters',
+        'justice',
+        'ferguson',
+        'injured'
+        ],
 
     # 'medical_kw': [
         # 'ebola', 'virus', 'epidemic', 'infection'],
 
     'traffic': [
-        'traffic', 'accident', 'blocked', 'closed', 'injury', 'delay', 'delayed',
-        'stuck']
+        'traffic',
+        'update',
+        'accident',
+        'sydney',
+        'cruise',
+        'congestion',
+        'heavy',
+        'along',
+        'makati',
+        'direction',
+        'opposite',
+        'angeles',
+        'puyat',
+        'carnival',
+        'makatitraffic',
+        'heads',
+        'spirit',
+        'ayala',
+        'cleared',
+        'south',
+        'partners',
+        'gridlocks',
+        'north',
+        'moving',
+        'reporting',
+        'drive',
+        'lanes',
+        'nearby',
+        'swell',
+        'helped',
+        'social',
+        'drivers',
+        'crash',
+        'duval',
+        'closed',
+        'highway',
+        'towards',
+        'delay',
+        'morning',
+        'blocked',
+        'nashville',
+        'minor',
+        'incident',
+        'harbour',
+        'lights',
+        'alert',
+        'tractor',
+        'broward',
+        'vehicle',
+        'delays'
+        ]
     }
 
 category_list = ['war', 'disaster', 'protest', 'traffic']
@@ -105,16 +298,18 @@ def classify(data_dir):
 
     for event_dir in event_dirs:
         fi = open(os.path.join(fi_dir, event_dir, token_freq_fn))
+        temp_classification = []
         for line in fi:
             temp_dic = ast.literal_eval(line.strip())
             temp_class = [temp_dic['event']]
             for i in range(len(category_list)):
                 temp_class.append(cal_distance(temp_dic['token_counter'], category_list[i]))
-            if min(temp_class[1:]) == 1.0:
-                temp_class.append(-1)
+            if min(temp_class[1:]) >= 0.88:
+                temp_class.append(0)
             else:
                 temp_class.append(temp_class.index(min(temp_class[1:])))
-            event_classification_list.append(temp_class)
+            temp_classification.append(temp_class)
+        event_classification_list.append(temp_classification)
     return event_classification_list
 
 
@@ -144,19 +339,29 @@ def test(data_dir):
 if __name__ == '__main__':
     event_classification_list = classify(sys.argv[1])
     fo = open(sys.argv[2], 'w')
-    category_key = sys.argv[3]
-    correctly_classified_cnt = 0.0
+    pp(event_classification_list)
+    val_list = ['o', 'w', 'd', 'p', 't']
     for item in event_classification_list:
-        if item[5] == category_list.index(category_key) + 1:
-            correctly_classified_cnt += 1.0
-    non_classifiable_cnt = 0.0
-    for item in event_classification_list:
-        if item[5] == -1:
-            non_classifiable_cnt += 1.0
-    print >> fo, 'No. correctly classified: {}'.format(correctly_classified_cnt)
-    print >> fo, 'No. unclassifiable: {}'.format(non_classifiable_cnt)
-    print >> fo, 'Total No.: {}'.format(len(event_classification_list))
-    print >> fo, 'Accuracy rate: {}'.format(correctly_classified_cnt / (len(event_classification_list) - non_classifiable_cnt))
-    print >> fo, 'Non classifiable rate: {}'.format(non_classifiable_cnt / len(event_classification_list))
-    print >> fo, 'Overall Accuracy: {}'.format(correctly_classified_cnt / len(event_classification_list))
-    print >> fo, event_classification_list
+        cat_str = ''
+        for i in item:
+            cat_str += str(val_list[i[5]]) + ' '
+        print >> sys.stderr, cat_str.strip()
+        print >> fo, cat_str.strip()
+
+#    fo = open(sys.argv[2], 'w')
+#    category_key = sys.argv[3]
+#    correctly_classified_cnt = 0.0
+#    for item in event_classification_list:
+#        if item[5] == category_list.index(category_key) + 1:
+#            correctly_classified_cnt += 1.0
+#    non_classifiable_cnt = 0.0
+#    for item in event_classification_list:
+#        if item[5] == -1:
+#            non_classifiable_cnt += 1.0
+#    print >> fo, 'No. correctly classified: {}'.format(correctly_classified_cnt)
+#    print >> fo, 'No. unclassifiable: {}'.format(non_classifiable_cnt)
+#    print >> fo, 'Total No.: {}'.format(len(event_classification_list))
+#    print >> fo, 'Accuracy rate: {}'.format(correctly_classified_cnt / (len(event_classification_list) - non_classifiable_cnt))
+#    print >> fo, 'Non classifiable rate: {}'.format(non_classifiable_cnt / len(event_classification_list))
+#    print >> fo, 'Overall Accuracy: {}'.format(correctly_classified_cnt / len(event_classification_list))
+#    print >> fo, event_classification_list
