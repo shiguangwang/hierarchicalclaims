@@ -50,10 +50,12 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 	f = open(input_file,'r')
 	lines = [line.strip() for line in f.readlines()]
 	events = {}
-	for line in lines:
-		d = ast.literal_eval(line)
-		key = d['kw_pair'][0]+'_'+d['kw_pair'][1]
+        dall = ast.literal_eval(lines[0])
+	for i in range(len(dall)):
+		d = dall[i]
 		tids = d['tweet_ids']
+		#key = d['kw_pair'][0]+'_'+d['kw_pair'][1]  
+		key = '_'.join(d['signature'])  
                 events[key]=[]
                 for tid in tids:
                     events[key].append((tid_content[str(tid)],str(tid)))
@@ -100,23 +102,24 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 			clabel = cityinfo.most_common(1)
 			clabel = clabel[0][0]			
 			#clabel = urllib.quote_plus(clabel.encode('utf-8'))
-			if len(filtered_tag)>0:
-				address=address+' '+clabel
+			#if len(filtered_tag)>0:
+			#	address=address+' '+clabel
 				#format_add,lat,lng,status=json_localization.find_add(address)
-				e_address[e].append(address)
-				"""
-				if status==1:
-					try:
-						e_address[e].append(format_add)
-					except UnicodeEncodeError:
-						pass
-				"""
+			#	e_address[e].append(address)
+			#	"""
+			#	if status==1:
+			#		try:
+			#			e_address[e].append(format_add)
+			#		except UnicodeEncodeError:
+			#			pass
+			#	"""
 		printer = {}
 		printer['pair'] = e
-                if len(e_address[e]) > 0:
-        	    printer['address_formatted'] = most_common_element(e_address[e])
-                else:
-                    printer['address_formatted'] = ''
+                printer['address_formatted'] = clabel
+                #if len(e_address[e]) > 0:
+        	#    printer['address_formatted'] = most_common_element(e_address[e])
+                #else:
+                #    printer['address_formatted'] = ''
 		#printer['latitude'] = lat
 		#printer['longitude'] = lng
 		#printer['description'] = e_desc[e]
@@ -148,12 +151,15 @@ def main(argv):
         del lines
         """
 
-        fpath = input_folder + '/information_gain_files/'
+        fpath = input_folder + '/consolidated_events/'
         subdirectories = os.listdir(fpath)
+        out_dir = os.path.join(input_folder, 'consolidated_localization')
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
         for fn1 in subdirectories:
             print "Localizing ",fn1
-	    input_file = fpath + fn1 + '/pairs'
-            output_file = fpath + fn1 + '/localized_events.txt' 
+	    input_file = fpath + fn1
+            output_file = os.path.join(out_dir, fn1)
             dt = fn1.split('_')
 	    cluster_desc =  input_folder + '/clustered_dated_files/' + dt[1]+'/desc'
 	    original_input = input_folder + '/sliding_window_chunked_files/' + dt[1] 
