@@ -26,7 +26,7 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 		clusters[row[1]] = row[2:]
 	cdf.close()
 	del lines
-	
+
 	tid_meta = {}
         tid_content = {}
 	#of = open(original_input,'r')
@@ -46,7 +46,7 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
                # print "error"
 	#of.close()
 	del lines
-	
+
 	f = open(input_file,'r')
 	lines = [line.strip() for line in f.readlines()]
 	events = {}
@@ -54,8 +54,8 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 	for i in range(len(dall)):
 		d = dall[i]
 		tids = d['tweet_ids']
-		#key = d['kw_pair'][0]+'_'+d['kw_pair'][1]  
-		key = '_'.join(d['signature'])  
+		#key = d['kw_pair'][0]+'_'+d['kw_pair'][1]
+		key = '_'.join(d['signature'])
                 events[key]=[]
                 for tid in tids:
                     events[key].append((tid_content[str(tid)],str(tid)))
@@ -63,7 +63,7 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 	#stop_words=cachedStopWords+['traffic','delay','weekend','accident','hour','spent','stuck','today','smoke','fire','stop','jam']
 	stop_words=cachedStopWords
 	grammar = r"""
-	LOC: {<IN><DT>?<JJ>?<NN>*<PRP>?<CD>?<CC|POS>?<DT>?<JJ>?<NN>*<PRP>?<CD>?}   
+	LOC: {<IN><DT>?<JJ>?<NN>*<PRP>?<CD>?<CC|POS>?<DT>?<JJ>?<NN>*<PRP>?<CD>?}
 	"""
 	cp = nltk.RegexpParser(grammar)
 	e_address={}
@@ -83,12 +83,12 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 			for ch in """":#%/;-?.()@!""":
 				text = string.replace(text, ch,' ')
 			tokens = nltk.word_tokenize(text)
-			
+
 			cityinfo[tid_meta[d[1]]]+=1
 			rids = clusters[d[1]]
 			for r in rids:
 				cityinfo[r]+=1
-			
+
 			tagged = nltk.pos_tag(tokens)
 			tree=cp.parse(tagged)
 			filtered_tag = []
@@ -100,7 +100,7 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 			#address = '+'.join(filtered_tag[:3])
 			address = ' '.join(filtered_tag[:3])
 			clabel = cityinfo.most_common(1)
-			clabel = clabel[0][0]			
+			clabel = clabel[0][0]
 			#clabel = urllib.quote_plus(clabel.encode('utf-8'))
 			#if len(filtered_tag)>0:
 			#	address=address+' '+clabel
@@ -159,14 +159,14 @@ def main(argv):
         for fn1 in subdirectories:
             print "Localizing ",fn1
 	    input_file = fpath + fn1
-            output_file = os.path.join(out_dir, fn1)
+            output_file = os.path.join(out_dir, fn1.split('_')[1])
             dt = fn1.split('_')
 	    cluster_desc =  input_folder + '/clustered_dated_files/' + dt[1]+'/desc'
-	    original_input = input_folder + '/sliding_window_chunked_files/' + dt[1] 
+	    original_input = input_folder + '/sliding_window_chunked_files/' + dt[1]
 	    outfile = open(output_file,'w')
 	    getData(input_file,outfile,cluster_desc,original_input)
 	    outfile.close()
-	
+
 if __name__ == "__main__":
 	main(sys.argv)
         print "Qutting program"
