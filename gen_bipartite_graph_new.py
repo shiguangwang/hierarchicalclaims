@@ -26,8 +26,8 @@ def gen_protests(data_dir):
     event_loc = {}
 
     out_dir = 'bipartite_temp'
-    node_out_fn = 'nodes.txt'
-    edge_out_fn = 'edges.txt'
+    node_out_fn = 'nodes_with_location.txt'
+    edge_out_fn = 'edges_with_location.txt'
 
     node_list = []
     edge_list = []
@@ -103,7 +103,7 @@ def gen_protests(data_dir):
             else :
 				sig1 = '_'.join(item[0])
 				sig2 = '_'.join(item[1])
-				if event_loc[sig1]==event_loc[sig2]:
+				if len(event_loc[sig1]) > 0 and event_loc[sig1]==event_loc[sig2]:
 					edge_list.append((gen_signature(item[0], slot_idx), gen_signature(item[1], slot_idx + 1)))
 				else :
 					pass
