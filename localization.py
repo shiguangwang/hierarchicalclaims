@@ -18,6 +18,7 @@ def most_common_element(lst):
     return max(set(lst), key=lst.count)
 
 def getData(input_file,outfile,cluster_desc_file,original_input):
+	localization_count=0
 	clusters = {}
 	cdf = open(cluster_desc_file,'r')
 	lines = [line.strip() for line in cdf.readlines()]
@@ -113,6 +114,8 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 			#		except UnicodeEncodeError:
 			#			pass
 			#	"""
+		if len(clabel)>0:
+			localization_count+=1
 		printer = {}
 		printer['pair'] = e
                 printer['address_formatted'] = clabel
@@ -126,6 +129,9 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 		print >> outfile, printer
 		#if e_count>1:
 		#	break
+	ntot = len(events)
+	print "Localized ",localization_count," out of ",ntot," events"
+        return localization_count,ntot
 
 def main(argv):
         input_folder = argv[1]
@@ -154,6 +160,8 @@ def main(argv):
         fpath = input_folder + '/consolidated_events/'
         subdirectories = os.listdir(fpath)
         out_dir = os.path.join(input_folder, 'consolidated_localization')
+        lcount=0
+        ecount=0
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         for fn1 in subdirectories:
@@ -164,8 +172,11 @@ def main(argv):
 	    cluster_desc =  input_folder + '/clustered_dated_files/' + dt[1]+'/desc'
 	    original_input = input_folder + '/sliding_window_chunked_files/' + dt[1]
 	    outfile = open(output_file,'w')
-	    getData(input_file,outfile,cluster_desc,original_input)
+	    l,e=getData(input_file,outfile,cluster_desc,original_input)
+            lcount+=l
+            ecount+=e
 	    outfile.close()
+        print "Total ",lcount," localized out of ",ecount," events"
 
 if __name__ == "__main__":
 	main(sys.argv)
