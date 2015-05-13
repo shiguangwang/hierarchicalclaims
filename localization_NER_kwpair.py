@@ -43,11 +43,11 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 	f = open(input_file,'r')
 	lines = [line.strip() for line in f.readlines()]
 	events = {}
-	dall = ast.literal_eval(lines[0])
-	for i in range(len(dall)):
-		d = dall[i]
+	# dall = ast.literal_eval(lines[0])
+	for line in lines:
+		d = ast.literal_eval(line)
 		tids = d['tweet_ids']
-		key = '_'.join(d['signature'])
+		key = '_'.join(d['kw_pair'])
 		events[key]=[]
 		for tid in tids:
 			events[key].append((tid_content[str(tid)],str(tid)))
@@ -64,7 +64,7 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
 			text = re.sub(r'http:(.*)|https:(.*)', '', text)
 			text = re.sub(r'@([A-Za-z0-9_]+)', '', text)
 			text = re.sub(r'&amp;', 'and', text)
-			for ch in """":#%/;-?.()@!',&_|""":
+			for ch in """":#%/;-?.()@!',&_|[]$+*""":
 				text = string.replace(text, ch,' ')
 			e_desc += text + ' '
                 ner_tags = []
@@ -72,6 +72,7 @@ def getData(input_file,outfile,cluster_desc_file,original_input):
     		    ner_tags.extend(st.tag(e_desc.split()))
                 except UnicodeDecodeError:
                     print e_desc
+                #ner_tags.extend(st.tag(e_desc.split()))
 		#print ner_tags
 		locs=[]
 		for tags in ner_tags:
@@ -99,14 +100,14 @@ def main(argv):
         input_folder = argv[1]
         lcount=0
         ecount=0
-        fpath = input_folder + '/consolidated_events/'
+        fpath = input_folder + '/information_gain_files/'
         subdirectories = os.listdir(fpath)
-        out_dir = os.path.join(input_folder, 'consolidated_localization')
+        out_dir = os.path.join(input_folder, 'keyword_pair_localization')
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         for fn1 in subdirectories:
 			print "Localizing ",fn1
-			input_file = fpath + fn1
+			input_file = os.path.join(fpath, fn1, 'pairs')
 			output_file = os.path.join(out_dir, fn1.split('_')[1])
 			dt = fn1.split('_')
 			cluster_desc =  input_folder + '/clustered_dated_files/' + dt[1]+'/desc'

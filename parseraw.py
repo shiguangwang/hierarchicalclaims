@@ -11,6 +11,7 @@ from data_analyzer import analyze_consolidated_tweets
 from caldist import method, parse_file, cal_dist_perday, cal_dist_twoday
 from consolidation import consolidating
 import ast
+from pprint import pprint as pp
 
 
 # This is the checkpoint name for chunking the raw file into 5000 lines.
@@ -72,6 +73,8 @@ keyword_pair_key = 'kw_pair'
 information_gain_key = 'info_gain'
 tweet_ids_key = 'tweet_ids'
 
+# This is the inheritance checkpoint
+checkpoint_inheritance = 'inheritance.checkpoint'
 
 # This is the checkpoint name for extracting token frequencies for events.
 checkpoint_token_frequency = 'token_frequency.checkpoint'
@@ -81,7 +84,7 @@ token_frequency_dir = 'token_frequency'
 token_frequency_fn = 'token_frequency'
 token_summary_fn = 'event_token_summary'
 # Threshold for top K most significant events
-token_frequency_top_k = information_gain_top_k
+token_frequency_top_k = information_gain_top_k * 2.0
 # json file names
 event = 'event'
 tokens = 'token_counter'
@@ -264,6 +267,52 @@ def processing_tweets(data_dir, tweets_file):
             fp.close()
         # Create the checkpoint marker file
         open(os.path.join(data_dir, checkpoint_information_gain), 'w').close()
+
+    if not os.path.exists(os.path.join(data_dir, checkpoint_inheritance)):
+        print >> sys.stderr, "Executing inheritance...."
+        ig_dir = os.listdir(os.path.join(data_dir, information_gain_dir))
+
+        def local_cmp(it1, it2):
+            date_format = '%Y-%m-%d-%H'
+            time1 = datetime.strptime(it1.split('_')[1], date_format)
+            time2 = datetime.strptime(it2.split('_')[1], date_format)
+            if time1 < time2:
+                return -1
+            if time1 > time2:
+                return 1
+            return 0
+        ig_dir.sort(cmp=local_cmp)
+        for i in range(len(ig_dir) - 1):
+            print >> sys.stderr, ig_dir[i + 1]
+            inherit_list = _keyword_pair_inheritance(data_dir, ig_dir[i], ig_dir[i + 1])
+            fi = open(os.path.join(data_dir, information_gain_dir, ig_dir[i + 1], keyword_pair_fn))
+            kw_list = []
+            for line in fi:
+                kw_list.append(ast.literal_eval(line.strip()))
+            fi.close()
+            # pp(kw_list)
+            kw_set_dic = {}
+            for it in kw_list:
+                if it[keyword_pair_key][0] in kw_set_dic.keys():
+                    kw_set_dic[it[keyword_pair_key][0]].append(it[keyword_pair_key][1])
+                else:
+                    kw_set_dic[it[keyword_pair_key][0]] = [it[keyword_pair_key][1]]
+                if it[keyword_pair_key][1] in kw_set_dic.keys():
+                    kw_set_dic[it[keyword_pair_key][1]].append(it[keyword_pair_key][0])
+                else:
+                    kw_set_dic[it[keyword_pair_key][1]] = [it[keyword_pair_key][0]]
+            for item in inherit_list:
+                if item[keyword_pair_key][0] not in kw_set_dic:
+                    kw_list.append(item)
+                else:
+                    if item[keyword_pair_key][1] not in kw_set_dic[item[keyword_pair_key][0]]:
+                        kw_list.append(item)
+            fo = open(os.path.join(data_dir, information_gain_dir, ig_dir[i + 1], keyword_pair_fn), 'w')
+            for item in kw_list:
+                fo.write(json.JSONEncoder().encode(item) + '\n')
+            fo.close()
+        open(os.path.join(data_dir, checkpoint_inheritance), 'w').close()
+
     if not os.path.exists(os.path.join(data_dir, checkpoint_token_frequency)):
         if not os.path.exists(os.path.join(data_dir, token_frequency_dir)):
             os.makedirs(os.path.join(data_dir, token_frequency_dir))
@@ -386,6 +435,37 @@ def _consolidating(data_dir):
         fo.close()
 
 
+def _keyword_pair_inheritance(data_dir, ig_dir_base, ig_dir_cmp):
+    inherit_list = []
+    kw_cnt_list = []
+
+    kw_base_fi = open(os.path.join(data_dir, 'information_gain_files', ig_dir_base, 'pairs'))
+    for line in kw_base_fi:
+        temp_dic = ast.literal_eval(line.strip())
+        kw_cnt_list.append(temp_dic)
+    for item_dic in kw_cnt_list:
+        kw = item_dic['kw_pair']
+        cmp_fn = os.path.join(data_dir, 'keyword_file', ig_dir_cmp.split('_')[1], 'appearence')
+        cmp_fi = open(cmp_fn)
+        cmp_dic = ast.literal_eval(cmp_fi.readline().strip())
+        set1 = set([])
+        if kw[0] in cmp_dic.keys():
+            set1 = set(cmp_dic[kw[0]])
+        set2 = set([])
+        if kw[1] in cmp_dic.keys():
+            set2 = set(cmp_dic[kw[1]])
+        cmp_set = set1.intersection(set2)
+        if len(cmp_set) > len(item_dic['tweet_ids']) / 2:
+            temp_dic = {}
+            temp_dic['kw_pair'] = kw
+            temp_dic['tweet_ids'] = list(cmp_set)
+            inherit_list.append(temp_dic)
+    # pp(inherit_list)
+    return inherit_list
+
+
+
+
 def _gen_info_gain_for_two(keyword_dir_base, keyword_dir_comp):
     keyword_set_base = json.load(open(os.path.join(keyword_dir_base,
                                                    appearence_fn)))
@@ -404,8 +484,9 @@ def _gen_info_gain_for_two(keyword_dir_base, keyword_dir_comp):
     print >> sys.stderr, 'comp_total_intervals_len = '\
         + str(comp_total_intervals_len)
 
-    key_list = [k for k in set(keyword_set_base.keys())
-                .union(set(keyword_set_comp.keys()))]
+    # key_list = [k for k in set(keyword_set_base.keys())
+    #             .union(set(keyword_set_comp.keys()))]
+    key_list = keyword_set_comp.keys()
     print >> sys.stderr, 'key_list length is {}'.format(len(key_list))
     ig_dic = {}
     idx_dic = {}

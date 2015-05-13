@@ -89,7 +89,8 @@ def analyze_tweets(data_dir, infogain_folder, token_frequency_folder, fi_name, f
 			tid_desc = {}
                         tid_content = {}
 			tid_desc,tid_content = getDesc(data_dir,dates[1],tid_desc,tid_content)
-                        for line in lines[:no_events]:
+                        # for line in lines[:no_events]:
+                        for line in lines:
                                 printer={}
 				d = ast.literal_eval(line)
 				event_name = d['kw_pair'][0]+'_'+d['kw_pair'][1]
