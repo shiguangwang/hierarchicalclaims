@@ -112,6 +112,10 @@ event_tracking_thresh = 0.85
 event_tracking_alg = 'jacard'
 
 
+
+inheritance_dic = {}
+
+
 def processing_tweets(data_dir, tweets_file):
     if not os.path.exists(os.path.join(data_dir, checkpoint_tweet_chunked)):
         if not os.path.exists(os.path.join(data_dir, chunk_file_dir)):
@@ -288,7 +292,13 @@ def processing_tweets(data_dir, tweets_file):
             fi = open(os.path.join(data_dir, information_gain_dir, ig_dir[i + 1], keyword_pair_fn))
             kw_list = []
             for line in fi:
-                kw_list.append(ast.literal_eval(line.strip()))
+                temp_entry = ast.literal_eval(line.strip())
+                temp_kwp = temp_entry['kw_pair']
+                temp_kwp[0] = temp_kwp[0].strip()
+                temp_kwp[1] = temp_kwp[1].strip()
+                temp_entry['kw_pair'] = temp_kwp
+                kw_list.append(temp_entry)
+                # kw_list.append(ast.literal_eval(line.strip()))
             fi.close()
             # pp(kw_list)
             kw_set_dic = {}
@@ -455,7 +465,8 @@ def _keyword_pair_inheritance(data_dir, ig_dir_base, ig_dir_cmp):
         if kw[1] in cmp_dic.keys():
             set2 = set(cmp_dic[kw[1]])
         cmp_set = set1.intersection(set2)
-        if len(cmp_set) > len(item_dic['tweet_ids']) / 2:
+        if len(cmp_set) > len(item_dic['tweet_ids']) or (len(cmp_set) > len(item_dic['tweet_ids']) / 2 and len(cmp_set) > 20):
+            print >> sys.stderr, 'cmp_set: {0}, item_dic: {1}'.format(len(cmp_set), len(item_dic['tweet_ids']))
             temp_dic = {}
             temp_dic['kw_pair'] = kw
             temp_dic['tweet_ids'] = list(cmp_set)
